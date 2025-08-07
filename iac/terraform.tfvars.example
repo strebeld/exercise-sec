@@ -1,0 +1,2 @@
+project_id          = "your-gcp-project-id"
+authorized_ip_range = "203.0.113.5/32" # IMPORTANT: Replace with your public IP address with a /32 suffix
