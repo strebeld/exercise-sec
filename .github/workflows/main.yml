@@ -17,7 +17,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_ID }}
+          service_account: ${{ secrets.GCP_SA }}
 
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker gcr.io --quiet
@@ -29,10 +30,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build \
-            -t $IMAGE_NAME:latest \
-            -t $IMAGE_NAME:$GIT_SHA .
-
+          docker build -t $IMAGE_NAME:$GIT_SHA ./app/sec-app # -t $IMAGE_NAME:latest
+            
       - name: Install Trivy
         uses: aquasecurity/trivy-action@master
         with:
@@ -40,12 +39,12 @@ jobs:
 
       - name: Scan Docker image
         run: |
-          trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME:latest
+          trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME:$GIT_SHA
 
       - name: Push Docker image to GCR
         if: success()
         run: |
-          docker push $IMAGE_NAME:latest
+          # docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:$GIT_SHA
 
       - name: Checkout GitOps repo

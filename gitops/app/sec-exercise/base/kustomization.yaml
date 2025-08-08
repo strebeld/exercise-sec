@@ -1,0 +1,8 @@
+resources:
+  - deployment.yaml
+  - service.yaml
+
+images:
+  - name: my-app         # logical name used by overlays
+    newName: us-central1-docker.pkg.dev/my-project/my-repo/my-app
+    newTag: latest
