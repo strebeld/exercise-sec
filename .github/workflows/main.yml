@@ -1,0 +1,84 @@
+name: Build, Scan, Push to GCR, and Update Kustomize GitOps Repo
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-scan-push-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Set image vars
+        run: |
+          echo "IMAGE_NAME=gcr.io/${{ secrets.GCP_PROJECT_ID }}/exercise-sec" >> $GITHUB_ENV
+          echo "GIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t $IMAGE_NAME:latest \
+            -t $IMAGE_NAME:$GIT_SHA .
+
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          version: latest
+
+      - name: Scan Docker image
+        run: |
+          trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME:latest
+
+      - name: Push Docker image to GCR
+        if: success()
+        run: |
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:$GIT_SHA
+
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.ARGOCD_GITOPS_REPO }}
+          token: ${{ secrets.ARGOCD_GITOPS_PAT }}
+          path: gitops
+
+      - name: Update Kustomize image tag
+        run: |
+          cd gitops
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          ./kustomize edit set image my-app=$IMAGE_NAME:$GIT_SHA
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git commit -am "Update image to $IMAGE_NAME:$GIT_SHA"
+          git push
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd /usr/local/bin/argocd
+          argocd version --client
+
+      - name: ArgoCD login, sync, and wait
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+          ARGOCD_APP_NAME: ${{ secrets.ARGOCD_APP_NAME }}
+        run: |
+          # Login using token (non-interactive). Use --insecure if you don't have valid TLS in CI.
+          argocd login "$ARGOCD_SERVER" --grpc-web --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
+          # Kick off sync and wait for health
+          argocd app sync "$ARGOCD_APP_NAME" --grpc-web --timeout 300
+          argocd app wait "$ARGOCD_APP_NAME" --grpc-web --health --timeout 300
