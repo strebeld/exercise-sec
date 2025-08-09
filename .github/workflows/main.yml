@@ -27,20 +27,15 @@ jobs:
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker gcr.io --quiet
 
-      - name: Set image vars
-        run: |
-          echo "IMAGE_NAME=gcr.io/${{ secrets.GCP_PROJECT_ID }}/exercise-sec" >> $GITHUB_ENV
-          echo "GIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
-
       - name: Build Docker image
         run: |
-          docker build -t $IMAGE_NAME:$GIT_SHA ./app/sec-app
+          docker build -t gcr.io/111111/sec-app:{{ github.sha }} ./app/sec-app
 
       - name: Trivy scan (HIGH/CRITICAL fail)
         uses: aquasecurity/trivy-action@0.24.0
         with:
           scan-type: 'image'
-          image-ref: '$IMAGE_NAME:$GIT_SHA'
+          image-ref: 'gcr.io/111111/sec-app:{{ github.sha }}'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'HIGH,CRITICAL'
