@@ -29,7 +29,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $gcr.io/12345/exercise-sec:${{ github.sha }} ./app/sec-app
+          docker build -t gcr.io/12345/exercise-sec:${{ github.sha }} ./app/sec-app
             
       - name: Install Trivy
         uses: aquasecurity/trivy-action@master
