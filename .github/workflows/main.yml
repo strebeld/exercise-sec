@@ -29,7 +29,7 @@ jobs:
 
       - name: Set image vars
         run: |
-          echo "IMAGE_NAME=gcr.io/${{ secrets.GCP_PROJECT_ID }}/exercise-sec" >> $GITHUB_ENV
+          echo "IMAGE_NAME=gcr.io/${{ 234567 }}/exercise-sec" >> $GITHUB_ENV
           echo "GIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
 
       - name: Build Docker image
