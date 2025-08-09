@@ -18,15 +18,11 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t gcr.io/test/exercise-sec:latest ./app/sec-app
-            
-      - name: Install Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          version: latest
-
+          
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
+          scan-type: 'image'
           image-ref: 'gcr.io/test/exercise-sec:latest'
           format: 'sarif'
           output: 'trivy-results.sarif'
