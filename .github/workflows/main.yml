@@ -43,7 +43,7 @@ jobs:
 
       - name: Scan Docker image
         run: |
-          trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME:$GIT_SHA
+          trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME:${{ github.sha }}
 
       - name: Push Docker image to GCR
         if: success()
