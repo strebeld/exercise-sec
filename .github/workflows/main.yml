@@ -18,18 +18,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_ID }}
-          service_account: ${{ secrets.GCP_SA }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker gcr.io --quiet
-
       - name: Build Docker image
         run: |
-          docker build -t gcr.io/exercise-sec:latest ./app/sec-app
+          docker build -t gcr.io/test/exercise-sec:latest ./app/sec-app
             
       - name: Install Trivy
         uses: aquasecurity/trivy-action@master
@@ -39,10 +30,19 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'gcr.io/exercise-sec:latest'
+          image-ref: 'gcr.io/test/exercise-sec:latest'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'HIGH,CRITICAL'
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_ID }}
+          service_account: ${{ secrets.GCP_SA }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
 
       - name: Push Docker image to GCR
         if: success()
