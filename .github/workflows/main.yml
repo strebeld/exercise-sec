@@ -34,7 +34,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $IMAGE_NAME:$GIT_SHA ./app/sec-app # -t $IMAGE_NAME:latest
+          docker build -t $IMAGE_NAME:$GIT_SHA ./app/sec-app
             
       - name: Install Trivy
         uses: aquasecurity/trivy-action@master
@@ -48,7 +48,6 @@ jobs:
       - name: Push Docker image to GCR
         if: success()
         run: |
-          # docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:$GIT_SHA
 
       - name: Checkout GitOps repo
