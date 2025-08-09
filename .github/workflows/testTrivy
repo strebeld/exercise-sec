@@ -1,0 +1,33 @@
+name: Test Trivy
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  id-token: 'write'
+
+jobs:
+  build-scan-push-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t gcr.io/test/exercise-sec:latest ./app/sec-app
+            
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          version: latest
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'gcr.io/test/exercise-sec:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
