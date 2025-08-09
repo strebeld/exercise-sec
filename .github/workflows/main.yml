@@ -29,7 +29,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t gcr.io/111111/sec-app:{{ github.sha }} ./app/sec-app
+          docker build -t gcr.io/111111/sec-app:latest ./app/sec-app
 
       - name: Trivy scan (HIGH/CRITICAL fail)
         uses: aquasecurity/trivy-action@0.24.0
